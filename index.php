@@ -131,6 +131,8 @@ if (! $result) die('Query error: ' . $koneksi->error);
                     <?php endif; ?>
                 </tbody>
             </table>
+
+            
         </div>
     </div>
 
