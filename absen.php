@@ -17,7 +17,6 @@ $pin = $zk->getSerialNumber();
   <tr>
     <td width="25">No</td>
     <td>ID User</td>
-    <td>Status</td>
     <td>Date</td>
   </tr>
 </thead>
