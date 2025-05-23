@@ -3,7 +3,7 @@ include 'koneksi.php';
 require 'zklibrary.php';
 
 // 1. Connect & disable device
-$zk = new ZKLibrary('192.168.1.201', 4370);
+$zk = new ZKLibrary('192.168.0.107', 4370);
 $zk->connect();
 $zk->disableDevice();
 

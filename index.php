@@ -13,17 +13,33 @@ if ($namesRes) {
 
 // Tangani pencarian via text, dropdown nama, dan filter waktu
 $keyword    = isset($_GET['keyword'])     ? $koneksi->real_escape_string(trim($_GET['keyword']))      : '';
+$tanggal    = isset($_GET['tanggal'])     ? $koneksi->real_escape_string(trim($_GET['tanggal']))      : '';
+$urutkan    = isset($_GET['urutkan'])     ? $koneksi->real_escape_string(trim($_GET['urutkan']))      : '';
 $nameSelect = isset($_GET['name_select']) ? $koneksi->real_escape_string(trim($_GET['name_select'])) : '';
-$filter     = isset($_GET['filter'])      ? intval($_GET['filter'])                                 : 0;
+$filter     = isset($_GET['filter'])      ? intval($_GET['filter'])                                   : 0;
+$order      = "a.tanggal DESC"; // default order
 
 // Bangun clause WHERE
 $wheres = [];
 if ($keyword !== '') {
     $wheres[] = "u.nama LIKE '%{$keyword}%'";
 }
+if ($tanggal !== '') {
+    $wheres[] = "DATE(a.tanggal) = '{$tanggal}'";
+}
+ if ($urutkan === 'nama') {
+        $order = "u.nama ASC"; // ubah urutan jika ingin urutkan nama
+}
+
+ if ($urutkan === 'tanggal' OR $urutkan === '') {
+        $order = "a.tanggal DESC"; // ubah urutan jika ingin urutkan nama
+}
+
 if ($nameSelect !== '') {
     $wheres[] = "u.nama = '{$nameSelect}'";
+   
 }
+
 switch ($filter) {
     case 1:
         $wheres[] = "DATE(a.tanggal) = CURDATE()";
@@ -35,6 +51,7 @@ switch ($filter) {
         $wheres[] = "YEAR(a.tanggal) = YEAR(CURDATE())";
         break;
 }
+
 $where = count($wheres) ? 'WHERE ' . implode(' AND ', $wheres) : '';
 
 // Query data attendance
@@ -42,15 +59,19 @@ $query = "
 SELECT
   u.nama,
   DATE(a.tanggal) AS tanggal,
-  MIN(a.tanggal)    AS check_in,
-  MAX(a.tanggal)    AS check_out,
+  MIN(a.tanggal) AS check_in,
+  MAX(a.tanggal) AS check_out,
   TIMEDIFF(MAX(a.tanggal), MIN(a.tanggal)) AS durasi
 FROM attendance a
 JOIN user u ON a.user_id = u.id
 {$where}
 GROUP BY u.id, DATE(a.tanggal)
-ORDER BY a.tanggal DESC
+ORDER BY {$order}
 ";
+
+// var_dump($query);
+// var_dump($query);
+
 
 $result = $koneksi->query($query);
 if (! $result) die('Query error: ' . $koneksi->error);
@@ -61,8 +82,8 @@ if (! $result) die('Query error: ' . $koneksi->error);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Record with Search & Filter</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Attendance Record SAGU Foundation</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light text-dark">
     <div class="container mt-5">
@@ -70,12 +91,15 @@ if (! $result) die('Query error: ' . $koneksi->error);
         
         <!-- Form Pencarian (Text), Dropdown Nama, Filter, dan Tindakan -->
         <form method="get" class="row g-2 mb-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <input type="text" name="keyword" value="<?= htmlspecialchars($keyword) ?>" class="form-control" placeholder="Cari teks...">
             </div>
-            <div class="col-md-3">
+             <div class="col-md-2">
+                <input type="date" name="tanggal" value="<?= htmlspecialchars($tanggal) ?>" class="form-control" placeholder="Cari teks...">
+            </div>
+            <div class="col-md-2">
                 <select name="name_select" class="form-select">
-                    <option value="">-- Pilih Nama --</option>
+                    <option value="">-- Semua tutor --</option>
                     <?php foreach ($nameList as $name): ?>
                         <option value="<?= htmlspecialchars($name) ?>" <?= $name === $nameSelect ? 'selected' : '' ?>><?= htmlspecialchars($name) ?></option>
                     <?php endforeach; ?>
@@ -87,15 +111,24 @@ if (! $result) die('Query error: ' . $koneksi->error);
                     <option value="1" <?= $filter===1?'selected':'' ?>>Hari Ini</option>
                     <option value="2" <?= $filter===2?'selected':'' ?>>Bulan Ini</option>
                     <option value="3" <?= $filter===3?'selected':'' ?>>Tahun Ini</option>
+                   
+                </select>
+            </div>
+              <div class="col-md-2">
+                <select name="urutkan" class="form-select">
+                    <option value="0" <?= $urutkan=== ''?'selected':'' ?>>Urutkan</option>
+                    <option value="tanggal" <?= $urutkan==='tanggal'?'selected':'' ?>>Berdasarkan tanggal</option>
+                    <option value="nama" <?= $urutkan==='nama'?'selected':'' ?>>Berdasarkan nama</option>
+                   
                 </select>
             </div>
             <div class="col-md-1">
                 <button type="submit" class="btn btn-primary">Cari</button>
             </div>
-            <div class="col-md-3 text-end">
-                <a target="_blank" href="export_pdf.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>" class="m-2 btn btn-danger">Export PDF</a>
-                <a target="_blank" href="export_excel.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>" class="m-2 btn btn-success">Export Excel</a>
-                <a href="fresh.php" class="m-2 btn btn-primary">Refresh</a>
+            <div class="col-md-6 mt-3">
+                <a target="_blank" href="export_pdf.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>" class="mr-2 btn btn-danger">Export PDF</a>
+                <a target="_blank" href="export_excel.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>" class="mr-2 btn btn-success">Export Excel</a>
+                <a href="fresh.php" class="mr-2 btn btn-primary">Refresh</a>
             </div>
         </form>
 
@@ -123,7 +156,7 @@ if (! $result) die('Query error: ' . $koneksi->error);
                             <td><?= htmlspecialchars($row['nama']); ?></td>
                             <td><?= $checkIn; ?></td>
                             <td><?= $checkOut; ?></td>
-                            <td><?= $durasiFormatted; ?></td>
+                            <td> <a href=""><?= $durasiFormatted; ?> </a>   </td>
                         </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
