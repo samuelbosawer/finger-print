@@ -126,8 +126,8 @@ if (! $result) die('Query error: ' . $koneksi->error);
                 <button type="submit" class="btn btn-primary">Cari</button>
             </div>
             <div class="col-md-6 mt-3">
-                <a target="_blank" href="export_pdf.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>" class="mr-2 btn btn-danger">Export PDF</a>
-                <a target="_blank" href="export_excel.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>" class="mr-2 btn btn-success">Export Excel</a>
+                <a target="_blank" href="export_pdf.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>&urutkan=<?= $urutkan ?>" class="mr-2 btn btn-danger">Export PDF</a>
+                <a target="_blank" href="export_excel.php?keyword=<?= urlencode($keyword) ?>&name_select=<?= urlencode($nameSelect) ?>&filter=<?= $filter ?>&urutkan=<?= $urutkan ?>" class="mr-2 btn btn-success">Export Excel</a>
                 <a href="fresh.php" class="mr-2 btn btn-primary">Refresh</a>
             </div>
         </form>

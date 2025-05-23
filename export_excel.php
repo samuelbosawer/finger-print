@@ -10,19 +10,43 @@ ob_start();
 require_once('koneksi.php');
 require_once 'vendor/PHPExcel/Classes/PHPExcel.php'; // PHPExcel versi 1.8
 
-// Ambil parameter filter
+$nameList = [];
+$namesRes = $koneksi->query("SELECT DISTINCT nama FROM user ORDER BY nama");
+if ($namesRes) {
+    while ($nr = $namesRes->fetch_assoc()) {
+        $nameList[] = $nr['nama'];
+    }
+}
+
+// Tangani pencarian via text, dropdown nama, dan filter waktu
 $keyword    = isset($_GET['keyword'])     ? $koneksi->real_escape_string(trim($_GET['keyword']))      : '';
+$tanggal    = isset($_GET['tanggal'])     ? $koneksi->real_escape_string(trim($_GET['tanggal']))      : '';
+$urutkan    = isset($_GET['urutkan'])     ? $koneksi->real_escape_string(trim($_GET['urutkan']))      : '';
 $nameSelect = isset($_GET['name_select']) ? $koneksi->real_escape_string(trim($_GET['name_select'])) : '';
-$filter     = isset($_GET['filter'])      ? intval($_GET['filter'])                                 : 0;
+$filter     = isset($_GET['filter'])      ? intval($_GET['filter'])                                   : 0;
+$order      = "a.tanggal DESC"; // default order
 
 // Bangun clause WHERE
 $wheres = [];
 if ($keyword !== '') {
     $wheres[] = "u.nama LIKE '%{$keyword}%'";
 }
+if ($tanggal !== '') {
+    $wheres[] = "DATE(a.tanggal) = '{$tanggal}'";
+}
+ if ($urutkan === 'nama') {
+        $order = "u.nama ASC"; // ubah urutan jika ingin urutkan nama
+}
+
+ if ($urutkan === 'tanggal' OR $urutkan === '') {
+        $order = "a.tanggal DESC"; // ubah urutan jika ingin urutkan nama
+}
+
 if ($nameSelect !== '') {
     $wheres[] = "u.nama = '{$nameSelect}'";
+   
 }
+
 switch ($filter) {
     case 1:
         $wheres[] = "DATE(a.tanggal) = CURDATE()";
@@ -34,6 +58,7 @@ switch ($filter) {
         $wheres[] = "YEAR(a.tanggal) = YEAR(CURDATE())";
         break;
 }
+
 $where = count($wheres) ? 'WHERE ' . implode(' AND ', $wheres) : '';
 
 // Query data attendance
@@ -41,15 +66,16 @@ $sql = "
 SELECT
   u.nama,
   DATE(a.tanggal) AS tanggal,
-  MIN(a.tanggal)    AS check_in,
-  MAX(a.tanggal)    AS check_out,
+  MIN(a.tanggal) AS check_in,
+  MAX(a.tanggal) AS check_out,
   TIMEDIFF(MAX(a.tanggal), MIN(a.tanggal)) AS durasi
 FROM attendance a
 JOIN user u ON a.user_id = u.id
 {$where}
 GROUP BY u.id, DATE(a.tanggal)
-ORDER BY a.tanggal DESC
+ORDER BY {$order}
 ";
+
 $result = $koneksi->query($sql);
 
 // Buat objek PHPExcel
